@@ -1,0 +1,15 @@
+{
+  "name": "dishwasher-reminder-home-status",
+  "version": "0.0.1",
+  "private": true,
+  "author": "ichusrlocalbin <ichusrlocalbin@gmail.com>",
+  "description": "x",
+  "dependencies": {
+    "express": "*",
+    "body-parser": "*",
+    "redis": "*"
+  },
+  "engines": {
+    "node": "5.8.0"
+  }
+}
