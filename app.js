@@ -9,7 +9,6 @@ app.use(body_parser.json());
 app.use(body_parser.urlencoded({ extended: true }));
 app.set('port', process.env.PORT || 4730);
 
-var warning_light_period = 9 * 60 * 60 * 1000; // 9 hour
 var status;
 
 var init_status = function() {
@@ -23,9 +22,21 @@ var init_status = function() {
 };
 
 var update_light_state = function() {
-  var past_warn_period = status.dishwasher.start_time &&
-        Date.now() - status.dishwasher.start_time > warning_light_period;
-  var color = past_warn_period ? 'warning' : 'normal';
+  var today_at = function(hour, minutes) {
+    var now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minutes);
+  };
+  var it_is_after = function(hour, minutes) {
+    var now = new Date();
+    return now.getTime() > today_at(hour, minutes).getTime();
+  };
+  var started_after = function(hour, minutes) {
+    if (! status.dishwasher.start_time) return false;
+    return status.dishwasher.start_time > today_at(hour, minutes).getTime();
+  };
+  var warn = (it_is_after(8,  00) && !started_after(6,  00)) ||
+             (it_is_after(21, 30) && !started_after(18, 00));
+  var color = warn ? 'warning' : 'normal';
   status.light.color = color;
   redis_client.set('status', JSON.stringify(status));
 };
@@ -43,14 +54,6 @@ app.get('/status/:name', function(req, res) {
   }  
   if (req.params.name == 'light') update_light_state();
   var s = status[req.params.name];
-  res.json(s);
-});
-
-app.post('/status/dishwasher_start', function(req, res) {
-  var s = status.dishwasher;
-  s.start_time = Date.now();
-  s.formated_start_time = new Date(s.start_time).toString();
-  redis_client.set('status', JSON.stringify(status));
   res.json(s);
 });
 
